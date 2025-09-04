@@ -1,0 +1,13 @@
+- layout: left
+  company: 디스코
+  link: https://www.disco.re/
+  job_title: 풀스택 개발자 / 개발리더
+  dates: 2020.05 ~ 현재
+  quote: >
+    MAU 50만, 프롭테크 서비스
+  description: | # this will include new lines to allow paragraphs
+    * 부동산 매물을 포함한 콘텐츠 통합 플랫폼 개발 및 운영
+    * 부동산 데이터 수집 및 분석 시스템
+    * 수익화 시스템 개발
+    * 인프라 관리 및 성능 최적화
+    * 보안 위협 모니터링 및 대응 방안 마련
