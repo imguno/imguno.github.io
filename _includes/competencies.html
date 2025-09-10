@@ -1,0 +1,6 @@
+<div class="container projects-container">
+    <h3>{{ site.competencies_title | default: "Competencies" }}</h3>
+    {% for competencies in site.data.competencies %}
+      {% include {{ competencies.layout | default: 'left' | append: ".html" | prepend: "v1/" }} item=competencies %}
+    {% endfor %}
+  </div>
