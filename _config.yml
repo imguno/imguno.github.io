@@ -8,7 +8,7 @@ version: 2
 # Personal info
 name: 박건호
 title: 풀스택 개발자 · 개발 리더 
-email: imguno0629@naver.com
+email: imguno0629@gmail.com
 # email_title: Email (Email title override)
 # phone: Your phone number (optional)
 # phone_title: Phone (Phone title override)
@@ -26,7 +26,7 @@ github_username:  imguno
 # facebook_username: jekyll
 # flickr_username: jekyll
 # instagram_username: jekyll
-# linkedin_username: jekyll
+# linkedin_username: 건호-박-467057383
 # xing_username: jekyll
 # pinterest_username: jekyll
 # youtube_username: jekyll
@@ -52,11 +52,9 @@ orcid_username: 0000-0003-3264-3601
 # about_title: About Me (Use this to override about section title)
 about_profile_image: images/profile.jpeg
 about_content:  | 
-    **프론트엔드, 백엔드, 데이터 파이프라인, 인프라 운영, 보안까지 아우르는 풀스택 개발자**로서 지난 5년간 실서비스를 직접 설계·운영하며 **기술적 깊이와 비즈니스 임팩트**를 동시에 추구해왔습니다.<br/>
-    Python(Django), jQuery, React를 중심으로 웹 서비스 아키텍처를 구축했고 AWS 기반 인프라 최적화와 서버리스 전환을 통해 **운영 안정성과 비용 효율화**를 달성했습니다. 특히 공공데이터 및 부동산 데이터를 다루며 **대규모 데이터 수집·정제 파이프라인을 자동화**하여 활용성을 높였고 Prometheus 기반 모니터링과 보안 코딩 가이드 제정으로 **서비스 안정성과 보안성**을 강화했습니다.
-    또한 개발 리더로서 코드 리뷰, CI/CD 파이프라인 정착, 보안 교육을 주도하며 **팀의 개발 문화와 생산성 향상**에 기여했습니다.<br>/
-    정보보호학 석사 과정에서의 연구 경험을 기반으로 새로운 기술을 빠르게 습득하고 실무에 적용하는 데 강점을 가지고 있으며, 항상 **“비즈니스 성과를 만드는 개발자”**라는 목표를 지향합니다.<br/>
-    앞으로도 **확장 가능하고 지속 가능한 시스템을 설계**하고 **조직의 성장을 이끄는 기반**을 만들어가는 데 기여하겠습니다.
+    프론트엔드부터 데이터 파이프라인, 인프라 운영까지 **서비스 전 주기 경험**을 갖춘 개발자입니다. 특히 **백엔드 아키텍처 설계와 안정적인 시스템 구현 역량**을 중심으로 성과를 만들어왔습니다.<br>
+    소규모 팀의 핵심 인력으로 근무하며 제한된 리소스 내에서 **레거시 구조 개선과 프로세스 효율화**를 주도했고, 기능 확장과 안정성 간의 균형을 맞추며 **운영 리스크를 최소화**했습니다. 또한 Prometheus/Grafana 기반 모니터링 구축, 서버리스 아키텍처 전환, 내부 보안 가이드라인 정착을 통해 **운영 효율성과 안정성**을 높였습니다.
+    이를 바탕으로 확장 가능하고 신뢰할 수 있는 백엔드 시스템을 구축하는 데 기여하겠습니다.
   # Write an awesome description about yourself here, this supports markdown, so you can add [links](http://foobar.com) and highlight things <mark>like this</mark>.
 
   # You can even add paragraphs by using empty lines like this and add anything else [markdown](https://www.markdownguide.org/getting-started#what-is-markdown) supports such as
