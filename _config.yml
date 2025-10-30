@@ -13,7 +13,7 @@ email: imguno0629@gmail.com
 # phone: Your phone number (optional)
 # phone_title: Phone (Phone title override)
 website: imguno.tistory.com
-# website_title: Web (Website title override)
+website_title: Blog
 
 # Dark Mode (true/false/never)
 darkmode: true
@@ -34,13 +34,11 @@ orcid_username: 0000-0003-3264-3601
 # googlescholar_username: D847cGsAAAAJ
 
 # Additional icon links
-# additional_links:
-# - title: Link name
-#   icon: Font Awesome brand icon name (eg. fab fa-twitter) (https://fontawesome.com/icons?d=gallery&s=brands&m=free)
-#   url: Link url (eg. https://google.com)
-# - title: another link
-#   icon: font awesome brand icon name (eg. fab fa-twitter) (https://fontawesome.com/icons?d=gallery&s=brands&m=free)
-#   url: Link url (eg. https://google.com)
+additional_links:
+  - title: CV
+    icon: fas fa-file-alt
+    url: https://same-parcel-970.notion.site/5-24f40546181680438d21f91fa29acb97?pvs=74
+
 
 # Google Analytics and Tag Manager
 # Using more than one of these may cause issues with reporting
