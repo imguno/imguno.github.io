@@ -1,47 +1,60 @@
 - layout: top-middle
-  name: 풀스택 개발 역량
-  link: 
+  name: 서비스 전 주기 개발 경험
+  link: https://github.com/imguno
   quote: >
+    기획부터 배포·운영까지 직접 주도하는 풀스택 개발자
   description: | # this will include new lines to allow paragraphs
-    * 프론트엔드(React, Next.js, jQuery), 백엔드(Django, REST API), 모바일(AOS, iOS), ETL, 인프라까지 전방위 서비스 개발 경험 보유
+    * React, Next.js, Django, REST API, iOS/AOS 등 전방위 서비스 개발 경험  
+    * 신규 기능 기획부터 데이터 모델링, 인프라 구축, 운영까지 End-to-End 개발 주도  
+    * 기능 확장성과 안정성 간 균형을 맞추며 서비스 품질 향상 달성
 
 - layout: top-middle
-  name: 데이터 엔지니어링
+  name: 데이터 파이프라인 설계 및 자동화
   link:
   quote: >
+    안정적이고 확장 가능한 데이터 처리 구조 구축
   description: | # this will include new lines to allow paragraphs
-    * Python·Pandas·Shell Script 기반 대규모 데이터 수집/정제 자동화 파이프라인 설계 및 운영
+    * Python, Pandas, Shell Script 기반 데이터 수집·정제 자동화 파이프라인 설계  
+    * AWS Lambda + SQS + Redis 기반 병렬·비동기 처리 구조로 성능 향상  
+    * 중복 수집 방지, 장애 복구 로직 구현으로 수집 성공률 및 품질 개선
 
 - layout: top-middle
-  name: 인프라·운영 최적화
+  name: 클라우드 인프라 최적화 및 운영 자동화
   link:
   quote: >
+    비용 효율성과 운영 효율을 모두 잡는 인프라 설계
   description: | # this will include new lines to allow paragraphs
-    * AWS 아키텍처 비용 30% 이상 절감, 서버리스 전환(AWS Lambda+SQS), 
-    * Prometheus 기반 모니터링·알림 체계 구축
-    * AWS i3 계열 EC2 휘발성 디스크 이관
+    * 서버리스 전환으로 처리 속도 3배 향상 및 인프라 비용 30% 절감  
+    * Prometheus·Grafana 기반 모니터링 및 알림 체계 구축  
+    * AWS i3 계열 EC2 휘발성 디스크 이관, CI/CD 및 배포 자동화 프로세스 구축
 
 - layout: top-middle
-  name: 보안·안정성 강화
+  name: 보안 강화 및 시스템 안정화
   link:
   quote: >
+    서비스 신뢰성을 높이는 보안 중심 아키텍처 설계
   description: | # this will include new lines to allow paragraphs
-    * SQL Injection/XSS 방지 로직 구축
-    * AWS IAM 최소 권한 원칙 적용
-    * 보안 코딩 가이드 제정 및 사내 교육 주도
+    * SQL Injection, XSS 방지 로직 적용 및 보안 정책 수립  
+    * AWS IAM 최소 권한 원칙 적용 및 접근 제어 체계 강화  
+    * 보안 코딩 가이드라인 제정 및 사내 교육 진행  
+    * 로그 기반 위협 탐지 및 자동 알림 시스템 구축
 
 - layout: top-middle
-  name: 팀 리딩 및 협업
+  name: 팀 리딩과 개발 문화 개선
   link:
   quote: >
+    협업 효율을 높이고 성장하는 개발팀을 만드는 리더십
   description: | # this will include new lines to allow paragraphs
-    * 코드 리뷰·CI/CD 파이프라인 정착
-    * 신규 인력 온보딩 프로세스 개선
-    * 개발팀 리딩 경험
+    * 코드 리뷰 및 CI/CD 정착을 통한 품질 중심 개발 문화 확립  
+    * 신규 인력 온보딩 프로세스 개선 및 개발 표준 수립  
+    * 소규모 팀 리딩을 통해 일정·품질·성과를 균형 있게 관리
 
 - layout: top-middle
-  name: 연구·학술적 기반
+  name: 학술적 기반의 기술 연구 역량
   link:
   quote: >
+    정보보호와 서버리스 컴퓨팅 연구를 통한 기술적 깊이 확보
   description: | # this will include new lines to allow paragraphs
-    * 정보보호학 석사, IoT 보안 및 서버리스 컴퓨팅 관련 다수 논문 발표 및 학술대회 수상 경력
+    * 세종대학교 정보보호학 석사, IoT 보안 및 서버리스 관련 논문 다수 발표  
+    * 정보보호학회 우수논문상 수상 등 연구 성과 보유  
+    * 학술적 근거를 기반으로 한 기술 의사결정과 보안 설계 수행

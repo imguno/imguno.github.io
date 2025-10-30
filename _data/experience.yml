@@ -1,13 +1,16 @@
 - layout: left
-  company: 디스코
+  company: 디스코 (DISCO)
   link: https://www.disco.re/
   job_title: 풀스택 개발자 / 개발리더
   dates: 2020.05 ~ 현재
   quote: >
-    MAU 50만, 프롭테크 서비스
+    MAU 50만 이상의 부동산 프롭테크 서비스 개발 및 운영
   description: | # this will include new lines to allow paragraphs
-    * 부동산 매물을 포함한 콘텐츠 통합 플랫폼 개발 및 운영
-    * 부동산 데이터 수집 및 분석 시스템
-    * 수익화 시스템 개발
-    * 인프라 관리 및 성능 최적화
-    * 보안 위협 모니터링 및 대응 방안 마련
+    * 프론트엔드(React, Next.js)부터 백엔드(Django, REST API), 인프라(AWS)까지 전 주기 개발 및 운영 총괄  
+    * 부동산 공공데이터 기반의 대규모 데이터 수집·정제·저장 파이프라인 설계 및 운영  
+    * 멤버십·광고 기반 플랫폼 수익화 모델 기획 및 결제 트랜잭션 시스템 구축  
+    * 서버리스 아키텍처 전환(AWS Lambda + SQS)으로 처리 속도 3배 향상 및 비용 10% 절감  
+    * CloudFront·Nginx 캐싱 구조 고도화로 평균 응답속도 30% 단축, 서버 부하 35% 감소  
+    * CI/CD, 모니터링(Prometheus, Grafana) 및 로그 분석 기반 서비스 안정화 수행  
+    * SQL Injection, XSS 등 주요 취약점 방지 로직 구축 및 보안 정책 수립  
+    * 코드 리뷰, 온보딩 프로세스 개선 등 개발팀 리딩 및 기술문화 정착 주도
