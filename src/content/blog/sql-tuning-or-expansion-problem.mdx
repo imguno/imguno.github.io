@@ -1,0 +1,71 @@
+---
+title: "SQL 튜닝 문제 - SQLP 실기 문제"
+description: "제시된 실행계획이 나오도록 힌트와 인덱스 사용을 포함하여 SQL을 개선하는 튜닝 문제."
+publishDate: 2026-03-07
+category: Database
+tags: ["SQLP", "Oracle", "SQL", "튜닝", "실행계획", "인덱스"]
+draft: false
+---
+
+# SQL 튜닝 문제
+
+SQLP 실기 시험에서 SQL 튜닝 문제가 출제되었다.  
+주어진 SQL을 특정 실행계획이 나오도록 힌트와 인덱스를 활용해 수정하는 문제였는데, 시험 당시에는 제대로 풀지 못했다.
+
+문제를 다시 복기하면서 실행계획과 튜닝 포인트를 정리해 두기 위해 기록한다.
+
+## 문제
+
+다음 SQL을 보고 **제시된 실행계획이 나오도록 힌트와 인덱스 사용을 포함하여 SQL을 개선하시오.**
+
+---
+
+## SQL
+
+```sql
+UPDATE t1
+SET c1 = (SELECT MAX(t2.c1)
+          FROM t2
+          WHERE (t2.a = t1.a OR t2.b = t1.b)),
+    c2 = (SELECT MAX(t2.c2)
+          FROM t2
+          WHERE (t2.a = t1.a OR t2.b = t1.b))
+WHERE t1.c_date = TO_CHAR(TO_DATE(:yyyymm,'yyyymm'),'yyyymm') - 1
+  AND EXISTS (
+        SELECT 1
+        FROM t3
+        WHERE t3.a = t1.a
+      );
+```
+
+---
+
+## 인덱스 정보
+
+```sql
+CREATE INDEX T2_X1 ON T2(A);
+CREATE INDEX T2_X2 ON T2(B);
+
+CREATE INDEX T3_X1 ON T3(A);
+```
+
+---
+
+## 목표 실행계획
+
+```
+UPDATE T1
+  HASH RIGHT SEMI
+    TABLE ACCESS FULL T3
+    TABLE ACCESS FULL T1
+  VIEW
+    SORT AGGREGATE
+      UNION ALL
+        TABLE ACCESS BY INDEX ROWID T2
+          INDEX RANGE SCAN T2_X1
+        TABLE ACCESS BY INDEX ROWID T2
+          INDEX RANGE SCAN T2_X2
+```
+
+---
+
