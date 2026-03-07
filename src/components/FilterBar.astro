@@ -60,116 +60,129 @@ const tagCategoryMapJson = JSON.stringify(tagCategoryMap);
 </div>
 <script is:inline define:vars={{ filterId }}>
   (function() {
-    const gridId = filterId + '-filter-grid';
-    const emptyId = filterId + '-filter-empty';
-    const bar = document.getElementById(filterId + '-filter-bar');
-    if (!bar) return;
-    const wrapper = bar.closest('.filter-bar-wrapper');
-    const grid = document.getElementById(gridId);
-    const emptyEl = document.getElementById(emptyId);
-    if (!grid) return;
+    function init() {
+      const gridId = filterId + '-filter-grid';
+      const emptyId = filterId + '-filter-empty';
+      const bar = document.getElementById(filterId + '-filter-bar');
+      if (!bar) return;
+      const wrapper = bar.closest('.filter-bar-wrapper');
+      const grid = document.getElementById(gridId);
+      const emptyEl = document.getElementById(emptyId);
+      if (!grid) return;
+      if (wrapper?.hasAttribute('data-filter-inited')) return;
+      wrapper?.setAttribute('data-filter-inited', 'true');
 
-    const toggleBtn = wrapper?.querySelector('[data-filter-toggle]');
-    const isCollapsible = wrapper?.getAttribute('data-collapsible') === 'true';
-    const contentEl = bar;
+      const toggleBtn = wrapper?.querySelector('[data-filter-toggle]');
+      const isCollapsible = wrapper?.getAttribute('data-collapsible') === 'true';
+      const contentEl = bar;
 
-    function setOpen(open) {
-      if (!contentEl || !toggleBtn) return;
-      contentEl.classList.toggle('is-open', open);
-      toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      toggleBtn.querySelector('.filter-toggle-icon').textContent = open ? '▲' : '▼';
-    }
-
-    if (isCollapsible && toggleBtn && contentEl) {
-      const mq = window.matchMedia('(min-width: 992px)');
-      if (mq.matches) {
-        contentEl.classList.add('is-open');
-        toggleBtn.setAttribute('aria-expanded', 'true');
-        toggleBtn.querySelector('.filter-toggle-icon').textContent = '▲';
-      } else {
-        contentEl.classList.remove('is-open');
+      function setOpen(open) {
+        if (!contentEl || !toggleBtn) return;
+        contentEl.classList.toggle('is-open', open);
+        toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        var icon = toggleBtn.querySelector('.filter-toggle-icon');
+        if (icon) icon.textContent = open ? '▲' : '▼';
       }
-      mq.addEventListener('change', function(e) {
-        if (e.matches) setOpen(true);
-        else setOpen(false);
-      });
-      toggleBtn.addEventListener('click', function() {
-        setOpen(!contentEl.classList.contains('is-open'));
-      });
-    }
 
-    let activeCategory = '';
-    let activeTags = new Set();
-
-    var tagCategoryMap = {};
-    try {
-      var mapStr = wrapper?.getAttribute('data-tag-category-map');
-      if (mapStr) tagCategoryMap = JSON.parse(mapStr);
-    } catch (e) {}
-
-    function updateTagVisibility() {
-      if (Object.keys(tagCategoryMap).length === 0) return;
-      bar.querySelectorAll('.filter-chip--tag').forEach(function(chip) {
-        var tag = chip.getAttribute('data-value') || '';
-        var cats = tagCategoryMap[tag];
-        var show = !activeCategory || (cats && cats.indexOf(activeCategory) !== -1);
-        chip.style.display = show ? '' : 'none';
-      });
-    }
-
-    function updateChips() {
-      bar.querySelectorAll('.filter-chip').forEach(function(chip) {
-        const type = chip.getAttribute('data-filter-type');
-        const value = chip.getAttribute('data-value') || '';
-        chip.classList.remove('active');
-        chip.setAttribute('aria-pressed', 'false');
-        if (type === 'category' && value === activeCategory) {
-          chip.classList.add('active');
-          chip.setAttribute('aria-pressed', 'true');
+      if (isCollapsible && toggleBtn && contentEl) {
+        var mq = window.matchMedia('(min-width: 992px)');
+        if (mq.matches) {
+          contentEl.classList.add('is-open');
+          toggleBtn.setAttribute('aria-expanded', 'true');
+          var iconEl = toggleBtn.querySelector('.filter-toggle-icon');
+          if (iconEl) iconEl.textContent = '▲';
+        } else {
+          contentEl.classList.remove('is-open');
         }
-        if (type === 'tag' && activeTags.has(value)) {
-          chip.classList.add('active');
-          chip.setAttribute('aria-pressed', 'true');
+        mq.addEventListener('change', function(e) {
+          if (e.matches) setOpen(true);
+          else setOpen(false);
+        });
+        toggleBtn.addEventListener('click', function() {
+          setOpen(!contentEl.classList.contains('is-open'));
+        });
+      }
+
+      var activeCategory = '';
+      var activeTags = new Set();
+
+      var tagCategoryMap = {};
+      try {
+        var mapStr = wrapper?.getAttribute('data-tag-category-map');
+        if (mapStr) tagCategoryMap = JSON.parse(mapStr);
+      } catch (e) {}
+
+      function updateTagVisibility() {
+        if (Object.keys(tagCategoryMap).length === 0) return;
+        bar.querySelectorAll('.filter-chip--tag').forEach(function(chip) {
+          var tag = chip.getAttribute('data-value') || '';
+          var cats = tagCategoryMap[tag];
+          var show = !activeCategory || (cats && cats.indexOf(activeCategory) !== -1);
+          chip.style.display = show ? '' : 'none';
+        });
+      }
+
+      function updateChips() {
+        bar.querySelectorAll('.filter-chip').forEach(function(chip) {
+          var type = chip.getAttribute('data-filter-type');
+          var value = chip.getAttribute('data-value') || '';
+          chip.classList.remove('active');
+          chip.setAttribute('aria-pressed', 'false');
+          if (type === 'category' && value === activeCategory) {
+            chip.classList.add('active');
+            chip.setAttribute('aria-pressed', 'true');
+          }
+          if (type === 'tag' && activeTags.has(value)) {
+            chip.classList.add('active');
+            chip.setAttribute('aria-pressed', 'true');
+          }
+        });
+        updateTagVisibility();
+      }
+
+      function filterItems() {
+        var items = grid.querySelectorAll('[data-filterable]');
+        var visible = 0;
+        items.forEach(function(item) {
+          var cat = (item.getAttribute('data-category') || '').trim();
+          var tagStr = item.getAttribute('data-tags') || '';
+          var itemTags = tagStr ? tagStr.split(',').map(function(t) { return t.trim(); }) : [];
+          var matchCategory = !activeCategory || cat === activeCategory;
+          var matchTags = activeTags.size === 0 || Array.from(activeTags).some(function(t) { return itemTags.indexOf(t) !== -1; });
+          var show = matchCategory && matchTags;
+          item.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+      }
+
+      bar.addEventListener('click', function(e) {
+        var chip = e.target.closest('.filter-chip');
+        if (!chip) return;
+        var type = chip.getAttribute('data-filter-type');
+        var value = chip.getAttribute('data-value') || '';
+        if (type === 'category') {
+          activeCategory = value;
+          if (value) activeTags.clear();
         }
+        if (type === 'tag') {
+          if (activeTags.has(value)) activeTags.delete(value);
+          else activeTags.add(value);
+        }
+        updateChips();
+        filterItems();
       });
-      updateTagVisibility();
-    }
 
-    function filterItems() {
-      const items = grid.querySelectorAll('[data-filterable]');
-      let visible = 0;
-      items.forEach(function(item) {
-        const cat = (item.getAttribute('data-category') || '').trim();
-        const tagStr = item.getAttribute('data-tags') || '';
-        const itemTags = tagStr ? tagStr.split(',').map(function(t) { return t.trim(); }) : [];
-        const matchCategory = !activeCategory || cat === activeCategory;
-        const matchTags = activeTags.size === 0 || Array.from(activeTags).some(function(t) { return itemTags.indexOf(t) !== -1; });
-        const show = matchCategory && matchTags;
-        item.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-      if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
-    }
-
-    bar.addEventListener('click', function(e) {
-      const chip = e.target.closest('.filter-chip');
-      if (!chip) return;
-      const type = chip.getAttribute('data-filter-type');
-      const value = chip.getAttribute('data-value') || '';
-      if (type === 'category') {
-        activeCategory = value;
-        if (value) activeTags.clear();
-      }
-      if (type === 'tag') {
-        if (activeTags.has(value)) activeTags.delete(value);
-        else activeTags.add(value);
-      }
       updateChips();
       filterItems();
-    });
+    }
 
-    updateChips();
-    filterItems();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+    document.addEventListener('astro:page-load', init);
   })();
 </script>
 <style>
