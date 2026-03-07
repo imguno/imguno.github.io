@@ -6,8 +6,6 @@ dist/
 .astro/
 src/generated/
 
-# Environment
-.env
 .env.*
 .env.production
 .env.development
