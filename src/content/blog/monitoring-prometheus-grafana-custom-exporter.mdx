@@ -1,0 +1,204 @@
+---
+title: "모니터링 시스템 구축: Prometheus + Grafana + Custom Exporter"
+description: "운영 서버에는 가벼운 Bash Exporter만 두고, 모니터링 서버에서 Prometheus + Grafana로 과거 기록이 쌓이는 모니터링 환경을 만든 과정."
+publishDate: 2025-09-06
+category: Infra
+tags: ["Prometheus", "Grafana", "Custom Exporter", "모니터링", "Bash"]
+draft: false
+---
+
+Custom Prometheus로 가벼운 모니터링 환경 만들기
+
+## Overview
+
+운영 과정에서 모니터링은 필수입니다. 장애를 "감지"하고 "예상"하며 "대응"하기 위함입니다.
+
+기존에도 모니터링 환경은 있었습니다. 하지만 실시간으로만 확인이 가능했을 뿐, 과거 기록은 남지 않았습니다. 즉, 순간적인 장애는 잡아낼 수 있었지만, "이 시간대에 왜 자꾸 느려지는가?" 같은 패턴 분석이나 사전 대응은 불가능했습니다.
+
+그래서 과거를 기록할 수 있는 새로운 모니터링 환경이 필요했습니다. 다만, 운영 서버에 무겁게 모듈을 추가 설치하는 방식은 피하고 싶었습니다. 서비스가 우선이었기 때문에, 불필요한 사이드 이펙트는 최대한 배제해야 했습니다.
+
+## 문제 상황
+
+- **기존 모니터링:** 실시간 확인만 가능, 과거 기록 없음
+- **장애는 잡을 수 있지만** 패턴 분석이나 예측 불가
+- **운영 서버:** 중요한 서비스가 올라가 있어 추가 모듈 설치는 리스크
+
+목표는 단순했습니다.
+
+- 가볍게,
+- 필요한 지표만,
+- 기록이 쌓이는 환경
+
+## 도구
+
+조건을 만족하면서도 가장 널리 쓰이고 안정성이 검증된 조합을 찾았습니다. 다행히 연구실 시절 써본 경험도 있었고 생태계도 충분했습니다!
+
+- **Prometheus:** 시계열 데이터 모니터링의 표준
+- **Grafana:** 시각화의 사실상 표준
+
+또한 서버에서 지표 수집을 위해서는 Prometheus Exporter 대신 **Custom Exporter**를 제작해서 사용했습니다. 전문 Exporter를 쓰면 더 많은 지표를 한 번에 얻을 수 있었지만 현재 서버 상태를 잘 모르기 때문에 안전한 방향으로 시작했습니다.
+
+- **Custom Exporter:** 운영 서버에 별도 모듈을 설치하지 않고 필요한 지표만 뽑아내기 위해 직접 제작
+
+모니터링 서버(사내 서버)에 Prometheus + Grafana를 설치하고, 운영 서버에는 스크립트와 엔드포인트만 두는 방식을 선택했습니다.
+
+## 실행 과정
+
+### 운영 서버에서 지표 수집
+
+운영 서버에는 `*_exporter` 같은 별도 프로그램을 설치하지 않았습니다.
+
+처음에는 Python의 `prometheus_client` 라이브러리를 이용해서 간단히 HTTP 서버를 띄워볼까 고민했습니다. 하지만 생각해 보니 굳이 그럴 이유가 없었습니다.
+
+운영 서버에는 이미 `mpstat`, `free`, `df` 같은 기본 유틸리티가 다 깔려 있었기 때문에 필요한 지표는 이 몇 가지 명령어만 호출하면 충분했습니다. (새로운 런타임 환경을 만들 필요도 없었습니다!)
+
+- 운영 서버에 이미 기본 유틸은 다 깔려 있었다
+- 추가 런타임 환경이 필요 없다
+- 스크립트 파일 하나만 배포하면 끝이라 관리가 매우 단순하다
+- 장애 대응 시 누구나 열어서 이해할 수 있을 정도로 직관적이다
+
+그래서 **Bash 스크립트 하나로 지표 파일을 생성하는 방식**을 선택했습니다.
+
+[Writing exporters | Prometheus](https://prometheus.io/docs/instrumenting/writing_exporters/) — Docs: This document contains things you should consider when writing an exporter or custom collector.
+
+**Prometheus 포맷 예시:**
+
+```
+# HELP cpu_usage CPU Usage in percentage
+# TYPE cpu_usage gauge
+cpu_usage 72.5
+
+# HELP memory_used Memory usage in MB
+# TYPE memory_used gauge
+memory_used 1536
+
+# HELP disk_used Disk usage in MB
+# TYPE disk_used gauge
+disk_used 104857
+```
+
+**Custom Bash Exporter:**
+
+```bash
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
+# 파일 경로 설정
+FILE_PATH="./metrics.prom"
+
+{
+    # CPU 전체 수량
+    echo "# TYPE cpu_total gauge"
+    lscpu | awk -F: '/^CPU\(s\):/ {print "cpu_total " $2}' | xargs
+
+    # CPU 사용량
+    echo "# TYPE cpu_usage gauge"
+    mpstat 1 1 | awk '/Average/ {print "cpu_usage " 100 - $12}'
+    
+    # CPU 사용 중
+    echo "# TYPE cpu_used gauge"
+    mpstat 1 1 | awk '/Average/ {print "cpu_used " (100 - $12) * ($2 / 100)}'
+
+    # CPU 남은
+    echo "# TYPE cpu_idle gauge"
+    mpstat 1 1 | awk '/Average/ {print "cpu_idle " $12}'
+
+    # 메모리 사용량
+    echo "# TYPE memory_total gauge"
+    free -m | awk '/^Mem:/ {print "memory_total " $2}'
+
+    echo "# TYPE memory_used gauge"
+    free -m | awk '/^Mem:/ {print "memory_used " $3}'
+
+    echo "# TYPE memory_free gauge"
+    free -m | awk '/^Mem:/ {print "memory_free " $4}'
+
+    echo "# TYPE memory_available gauge"
+    free -m | awk '/^Mem:/ {print "memory_available " $7}'
+
+    # 디스크 사용량
+    echo "# TYPE disk_total gauge"
+    df -m / | awk 'NR==2 {print "disk_total " $2}'
+
+    echo "# TYPE disk_used gauge"
+    df -m / | awk 'NR==2 {print "disk_used " $3}'
+
+    echo "# TYPE disk_free gauge"
+    df -m / | awk 'NR==2 {print "disk_free " $4}'
+} > $FILE_PATH
+```
+
+[Github] Lightweigh-prometheus-exporter
+
+- **cron으로 1분마다 실행** → `./metrics.prom` 업데이트
+- 운영 서버는 이미 HTTPS 서비스를 사용 중이었으므로, 이 파일을 그대로 **엔드포인트(`/resource_metrics`)로 노출**
+- 해당 엔드포인트는 보안상 **모니터링 서버 IP만 whitelist**로 허용
+
+### 모니터링 서버 준비
+
+운영 서버가 아닌, 별도의 사내 서버에 Docker 기반으로 Prometheus와 Grafana를 올렸습니다. 모니터링 서버는 실제 서비스와 무관하기 때문에 모듈 설치에 대한 부담이 없었습니다.
+
+```bash
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+sudo usermod -aG docker ubuntu
+```
+
+**Prometheus 설정 (`prometheus.yml`):**
+
+```yaml
+# prometheus.yml
+global:
+  scrape_interval: 1m  # 1분마다 스크랩
+  
+scrape_configs:
+  - job_name: 'custom_exporter'
+    metrics_path: /resource_metrics
+    scheme: https
+    static_configs:
+      - targets: ['server1.example.com:443']
+        labels:
+          server: 'server1'
+          environment: 'production'
+      - targets: ['server2.example.com:443']
+        labels:
+          server: 'server2'
+```
+
+**Prometheus와 Grafana 실행:**
+
+```bash
+docker run --name prometheus -d -p 9090:9090 \
+  -v ./prometheus.yml:/etc/prometheus/prometheus.yml \
+  -v ./data:/prometheus prom/prometheus
+
+docker run -d --name=grafana -p 3000:3000 grafana/grafana
+```
+
+이제 Prometheus가 주기적으로 운영 서버에 접속해 지표를 가져옵니다.
+
+## 마무리
+
+드디어 과거 기록이 쌓이기 시작했습니다. 덕분에 다음과 같은 정보를 알 수 있었습니다.
+
+- **특정 요일마다 CPU 부하가 급격히 늘어나는 패턴** — 사용자 이용 패턴을 확인할 수 있었습니다.
+- **새벽 시간대 배치 스크립트로 인한 메모리 급등** — 배치 스크립트를 개선할 수 있었습니다.
+- **사용자 수 증가에 따른 서버 반응** — 사용자가 증가하는 추세에서 인프라 개선 일정을 잡을 수 있었습니다.
+
+즉, 단순히 "장애 감지"를 넘어, **예상 가능한 모니터링 환경**을 만들 수 있었습니다. 단순한 자원 사용량 모니터링이 아닌 서비스 전체를 이해하는 데 도움이 되었습니다.
+
+특히 불필요하게 낭비되던 서버를 최소화하여 비용도 절약할 수 있었습니다. (환율 대응 성공!)
+
+## 더 나아가
+
+처음에는 CPU, 메모리, 디스크 같은 **자원 모니터링**만 했습니다. 점차 "서비스 지표"도 Prometheus 포맷으로 만들어 수집하기 시작했습니다.
+
+- 하루 단위 가입자 수, 거래 수
+- 서비스 특화 지표(특정 기능 사용 횟수)
+
+자원 모니터링에서 시작해 **서비스 모니터링**으로 자연스럽게 확장할 수 있었습니다.

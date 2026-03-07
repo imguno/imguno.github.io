@@ -1,0 +1,97 @@
+---
+/**
+ * Projects Index Page with category + tag filter.
+ * Uses shared FilterBar; grid id = projects-filter-grid.
+ */
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/SEO.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import FilterBar from '../../components/FilterBar.astro';
+import PageStats from '../../components/PageStats.astro';
+import { getCollection } from 'astro:content';
+import { pagesConfig } from '../../pages.config';
+import { sortCategories } from '../../utils/filterHelpers';
+import { PROJECT_CATEGORY_ORDER } from '../../utils/filterHelpers';
+
+const allProjects = await getCollection('projects');
+const sortedProjects = allProjects.sort((a, b) => {
+  if (a.data.order !== undefined && b.data.order !== undefined) return a.data.order - b.data.order;
+  if (a.data.order !== undefined) return -1;
+  if (b.data.order !== undefined) return 1;
+  return b.data.year - a.data.year;
+});
+
+const totalProjects = sortedProjects.length;
+const featuredCount = sortedProjects.filter((p) => p.data.featured).length;
+
+const categories = sortCategories(
+  [...new Set(sortedProjects.map((p) => p.data.category).filter(Boolean))] as string[],
+  PROJECT_CATEGORY_ORDER
+);
+const tags = [...new Set(sortedProjects.flatMap((p) => p.data.filterTags ?? []))].sort();
+
+const tagCategoryMap: Record<string, string[]> = {};
+sortedProjects.forEach((p) => {
+  const cat = (p.data.category || '').trim();
+  (p.data.filterTags ?? []).forEach((t: string) => {
+    if (!tagCategoryMap[t]) tagCategoryMap[t] = [];
+    if (cat && !tagCategoryMap[t].includes(cat)) tagCategoryMap[t].push(cat);
+  });
+});
+---
+
+<BaseLayout>
+  <SEO 
+    slot="head"
+    title={pagesConfig.projects.title}
+    description={pagesConfig.projects.description}
+    type="website"
+  />
+
+  <main class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">{pagesConfig.projects.heading}</h1>
+      <p class="page-intro">
+        {pagesConfig.projects.intro}
+      </p>
+      <PageStats text={`${totalProjects}개 프로젝트 · ${featuredCount}개 추천`} />
+    </header>
+
+    <div class="filter-bar-top" aria-label="필터">
+      <FilterBar
+        filterId="projects"
+        categories={categories}
+        tags={tags}
+        categoryLabel="카테고리"
+        tagLabel="태그"
+        collapsible
+        tagCategoryMap={tagCategoryMap}
+      />
+    </div>
+
+    {sortedProjects.length > 0 ? (
+      <div id="projects-filter-grid" class="card-list">
+        {sortedProjects.map((project) => {
+          const cat = project.data.category ?? '';
+          const tagsStr = (project.data.filterTags ?? []).join(',');
+          return (
+            <div data-filterable data-category={cat} data-tags={tagsStr}>
+              <ProjectCard
+                title={project.data.title}
+                slug={project.id}
+                outcomeSummary={project.data.outcomeSummary}
+                role={project.data.role}
+                year={project.data.year}
+                techStack={project.data.techStack}
+                featured={project.data.featured}
+                status={project.data.status}
+              />
+            </div>
+          );
+        })}
+      </div>
+    ) : null}
+    <p id="projects-filter-empty" class="empty-state" style="display: none;">필터에 맞는 프로젝트가 없습니다.</p>
+  </main>
+</BaseLayout>

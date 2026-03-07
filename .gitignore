@@ -1,6 +1,60 @@
-*.gem
-.bundle
-.sass-cache
-_site
-*.code-workspace
-vendor
+# Dependencies
+node_modules/
+
+# Build & generated
+dist/
+.astro/
+src/generated/
+
+# Environment
+.env
+.env.*
+.env.production
+.env.development
+.env.staging
+.env.test
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Caches
+.cache/
+.eslintcache
+*.tsbuildinfo
+.turbo/
+.npm/
+.yarn-integrity
+
+# Test
+coverage/
+*.lcov
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+*~
+.directory
+.Trash-*
+
+# Editors & IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.kiro
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace

@@ -1,0 +1,141 @@
+---
+title: "jQuery에 React 넣어보자 #1: 점진적 포팅 전략"
+description: "jQuery SPA에서 한 번에 갈아엎지 않고, jQuery가 트리거만 담당하고 React가 렌더링·상태·이벤트를 담당하도록 연동한 경험."
+publishDate: 2025-09-11
+category: Infra
+tags: ["jQuery", "React", "점진적 포팅", "SPA", "마이그레이션"]
+draft: false
+---
+
+jQuery에 React를 넣어보자!
+
+## Overview
+
+jQuery로 만든 SPA(single page application)는 시간이 지날수록 유지보수가 힘들어집니다. DOM을 직접 제어하다 보니 사이드이펙트가 자주 발생하고, 신규 개발자가 구조를 파악하기도 어렵습니다. 프론트엔드 전체가 하나의 거대한 프로그램처럼 동작하다 보니 성능 문제도 점점 두드러졌습니다.
+
+"이제 슬슬 넘어갈 때가 됐구나."
+
+React 도입을 희망했지만, 문제는 **한 번에 갈아엎을 수 없다**는 것이었습니다. 수년간 쌓아온 프론트엔드를 소수 인원으로 전환하는 건 리스크가 너무 컸습니다.
+
+그래서 선택한 방법은 **"점진적 포팅"**. 검색을 해보면 대부분 React 안에서 jQuery 함수를 호출하는 예시는 쉽게 찾을 수 있습니다. 하지만 저희가 필요했던 건 **그 반대, jQuery에서 React를 호출하는 구조**였습니다.
+
+이번 글은 바로 그 **jQuery에서 React 호출**하는 경험을 공유하는 이야기입니다.
+
+## Structure & Implementation
+
+### As-Is
+
+기존에는 jQuery와 Javascript로 새 페이지를 **문자열로 DOM을 만들고**, AJAX 호출과 이벤트 바인딩까지 처리했습니다. 페이지가 늘어나니 관리가 점점 어려워졌습니다.
+
+```javascript
+// jQuery: 문자열로 페이지 구성 + ajax + 이벤트
+const makeNewPage = () => {
+  let content = '';
+  content += '<div id="page"><button id="reload">Reload</button><div id="list"></div></div>';
+
+  $('body').append(content);
+
+  // 데이터 로딩
+  $.ajax({ url: '/api/items' }).done((items) => {
+    $('#list').html(items.map(it => `<div>${it.name}</div>`).join(''));
+  });
+
+  // 이벤트 바인딩
+  $('#reload').on('click', () => {
+    $.ajax({ url: '/api/items' }).done(/* ... */);
+  });
+};
+```
+
+### To-Be
+
+딴건 모르겠고 "이거 그냥 **페이지만 React로 만들어도** 편하지 않을까?"
+
+그래서 **jQuery는 트리거(열기/닫기 등)만 담당**하고, **렌더링·상태·이벤트·AJAX는 React로** 옮기기로 했습니다.
+
+#### 1) index.js를 "브리지"로 변경
+
+React 프로젝트를 생성하면 자동으로 만들어지는 `index.js`는 보통 단일 `<App />`을 루트에 렌더링하는 코드로만 쓰입니다. 이 파일을 수정해서, **jQuery에서 직접 React 컴포넌트를 제어할 수 있도록 전역 함수를 등록**했습니다.
+
+- mount / unmount
+- show / hide
+
+와 같은 함수를 `window` 객체에 붙여, jQuery 코드에서 `window.renderReactComponentByName(...)`처럼 React를 불러올 수 있게 했습니다.
+
+```javascript
+// index.js
+import React from "react";
+import ReactDOM from "react-dom/client";
+
+import HelloPage from "./pages/HelloPage";
+
+const components = { HelloPage };
+const rootInstances = {};
+
+// jQuery에서 React 컴포넌트를 호출하기 위한 함수 등록
+window.renderReactComponentByName = (componentName, elementId, props = {}) => {
+  const Component = components[componentName];
+
+  // ... 상태관리 및 에러 처리
+
+  if (!rootInstances[elementId]) {
+    rootInstances[elementId] = ReactDOM.createRoot(document.getElementById(elementId));
+  }
+  rootInstances[elementId].render(<Component {...props} />);
+};
+
+// 보여주기, 숨기기, 제거도 전역 함수로 등록
+window.showReactComponentByName = (id) => { /* ... */ };
+window.hideReactComponentByName = (id) => { /* ... */ };
+window.unmountReactComponentByName = (id) => { /* ... */ };
+```
+
+#### 2) 기존 HTML에서 React 불러오기
+
+사실 **개발환경을 설정하는 게 가장 어려운 숙제**였습니다. 운영환경은 빌드 결과물과 경로만 잘 잡아주면 되지만, 개발환경은 애매했거든요.
+
+- **개발환경:** React Dev Server에서 제공하는 `bundle.js`를 HTML에서 직접 불러왔습니다.
+  ```html
+  <script src="/react/static/js/bundle.js"></script>
+  ```
+  이렇게 하면 jQuery 페이지 안에서도 React Dev Server가 제공하는 자원을 바로 가져올 수 있고, 앞서 `index.js`에 등록해둔 전역 함수(`window.renderReactComponentByName(...)` 등)를 그대로 사용할 수 있었습니다.
+
+- **운영환경:** 오히려 더 간단했습니다. `npm run build`로 나온 결과물을 HTML에서 불러오기만 하면 끝이었습니다.
+
+## 연동하기
+
+### jQuery에서 React 호출
+
+jQuery에서 React 호출은 간단했습니다. 그냥 `window`에 등록해둔 함수를 호출하기만 하면 됩니다.
+
+```javascript
+$("#open").on("click", () => {
+  window.renderReactComponentByName("HelloPage", "hello-root");
+});
+```
+
+### React에서 jQuery 호출
+
+반대로 React에서 jQuery 함수도 호출할 수 있습니다.
+
+```javascript
+// React 컴포넌트 내부
+function HelloButton() {
+  const handleClick = () => {
+    // jQuery에서 window에 등록해둔 함수 실행
+    window.functionMadeByJquery();
+  };
+
+  return <button onClick={handleClick}>jQuery 함수 실행</button>;
+}
+```
+
+기존 네임스페이스를 잘 구분해둔 덕분에 접근은 쉬웠습니다. 단, 전역 변수 접근은 직접 불가능했기에 **함수를 경유하는 방식**으로 해결했습니다.
+
+추가로 이후 완전한 전환 시 참고가 될 수 있도록, React에서 호출하는 jQuery 함수는 별도로 기록해 두고 있습니다!
+
+## 마무리
+
+자료가 많지 않아 시행착오도 있었지만 결국 성공적인 포팅이었습니다. 약 6개월간 안정적으로 운영되고 있고, React로 새로 만들면서 **개발 기간도 절반 가까이 단축**할 수 있었습니다.
+
+아마 이런 케이스가 흔하진 않겠지만, 비슷한 상황에 계신 분들께 작은 참고가 되었으면 합니다.

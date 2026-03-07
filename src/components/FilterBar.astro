@@ -1,0 +1,294 @@
+---
+/**
+ * Reusable FilterBar for category + tag filtering. Use anywhere you need to filter a list.
+ *
+ * Usage:
+ * 1. <FilterBar filterId="my-page" categories={[...]} tags={[...]} /> (optionally categoryLabel, tagLabel, collapsible)
+ * 2. List wrapper: <div id="my-page-filter-grid"> (id = filterId + "-filter-grid")
+ * 3. Each item: <div data-filterable data-category="Backend" data-tags="AWS,Python">...</div>
+ * 4. Empty state (optional): <p id="my-page-filter-empty" class="empty-state" style="display:none">No items.</p>
+ *
+ * With collapsible={true}: shows a "Filters" toggle; on small screens panel starts closed. Use inside a sidebar layout.
+ */
+interface Props {
+  /** Unique id for this filter (grid will be {filterId}-filter-grid, empty {filterId}-filter-empty) */
+  filterId: string;
+  /** Category options (e.g. ["Backend", "Frontend"]) */
+  categories: string[];
+  /** Tag options for multi-select filter */
+  tags: string[];
+  /** Optional label for category group */
+  categoryLabel?: string;
+  /** Optional label for tag group */
+  tagLabel?: string;
+  /** Show toggle to collapse/expand filter panel (for sidebar layout; on mobile starts collapsed) */
+  collapsible?: boolean;
+  /** When set, only show tag chips that belong to the selected category (tag -> categories[]). */
+  tagCategoryMap?: Record<string, string[]>;
+}
+const { filterId, categories, tags, categoryLabel = 'Category', tagLabel = 'Tags', collapsible = false, tagCategoryMap = {} } = Astro.props;
+const gridId = `${filterId}-filter-grid`;
+const emptyId = `${filterId}-filter-empty`;
+const tagCategoryMapJson = JSON.stringify(tagCategoryMap);
+---
+<div class="filter-bar-wrapper" data-collapsible={collapsible} data-tag-category-map={tagCategoryMapJson}>
+  {collapsible && (
+    <button type="button" class="filter-toggle" aria-expanded="false" aria-controls={filterId + '-filter-bar'} data-filter-toggle>
+      <span class="filter-toggle-text">필터</span>
+      <span class="filter-toggle-icon" aria-hidden="true">▼</span>
+    </button>
+  )}
+  <div class="filter-bar" data-filter-id={filterId} id={filterId + '-filter-bar'} data-filter-content>
+    <div class="filter-group">
+      <span class="filter-label">{categoryLabel}</span>
+      <div class="filter-chips">
+        <button type="button" class="filter-chip active" data-filter-type="category" data-value="" aria-pressed="true">All</button>
+        {categories.map((c) => (
+          <button type="button" class="filter-chip" data-filter-type="category" data-value={c} aria-pressed="false">{c}</button>
+        ))}
+      </div>
+    </div>
+    {tags.length > 0 && (
+      <div class="filter-group">
+        <span class="filter-label">{tagLabel}</span>
+        <div class="filter-chips filter-chips--tags">
+          {tags.map((t) => (
+            <button type="button" class="filter-chip filter-chip--tag" data-filter-type="tag" data-value={t} aria-pressed="false">{t}</button>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+<script is:inline define:vars={{ filterId, gridId, emptyId }}>
+  (function() {
+    const bar = document.getElementById(filterId + '-filter-bar');
+    if (!bar) return;
+    const wrapper = bar.closest('.filter-bar-wrapper');
+    const grid = document.getElementById(gridId);
+    const emptyEl = document.getElementById(emptyId);
+    if (!grid) return;
+
+    const toggleBtn = wrapper?.querySelector('[data-filter-toggle]');
+    const isCollapsible = wrapper?.getAttribute('data-collapsible') === 'true';
+    const contentEl = bar;
+
+    function setOpen(open) {
+      if (!contentEl || !toggleBtn) return;
+      contentEl.classList.toggle('is-open', open);
+      toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      toggleBtn.querySelector('.filter-toggle-icon').textContent = open ? '▲' : '▼';
+    }
+
+    if (isCollapsible && toggleBtn && contentEl) {
+      const mq = window.matchMedia('(min-width: 992px)');
+      if (mq.matches) {
+        contentEl.classList.add('is-open');
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        toggleBtn.querySelector('.filter-toggle-icon').textContent = '▲';
+      } else {
+        contentEl.classList.remove('is-open');
+      }
+      mq.addEventListener('change', function(e) {
+        if (e.matches) setOpen(true);
+        else setOpen(false);
+      });
+      toggleBtn.addEventListener('click', function() {
+        setOpen(!contentEl.classList.contains('is-open'));
+      });
+    }
+
+    let activeCategory = '';
+    let activeTags = new Set();
+
+    var tagCategoryMap = {};
+    try {
+      var mapStr = wrapper?.getAttribute('data-tag-category-map');
+      if (mapStr) tagCategoryMap = JSON.parse(mapStr);
+    } catch (e) {}
+
+    function updateTagVisibility() {
+      if (Object.keys(tagCategoryMap).length === 0) return;
+      bar.querySelectorAll('.filter-chip--tag').forEach(function(chip) {
+        var tag = chip.getAttribute('data-value') || '';
+        var cats = tagCategoryMap[tag];
+        var show = !activeCategory || (cats && cats.indexOf(activeCategory) !== -1);
+        chip.style.display = show ? '' : 'none';
+      });
+    }
+
+    function updateChips() {
+      bar.querySelectorAll('.filter-chip').forEach(function(chip) {
+        const type = chip.getAttribute('data-filter-type');
+        const value = chip.getAttribute('data-value') || '';
+        chip.classList.remove('active');
+        chip.setAttribute('aria-pressed', 'false');
+        if (type === 'category' && value === activeCategory) {
+          chip.classList.add('active');
+          chip.setAttribute('aria-pressed', 'true');
+        }
+        if (type === 'tag' && activeTags.has(value)) {
+          chip.classList.add('active');
+          chip.setAttribute('aria-pressed', 'true');
+        }
+      });
+      updateTagVisibility();
+    }
+
+    function filterItems() {
+      const items = grid.querySelectorAll('[data-filterable]');
+      let visible = 0;
+      items.forEach(function(item) {
+        const cat = (item.getAttribute('data-category') || '').trim();
+        const tagStr = item.getAttribute('data-tags') || '';
+        const itemTags = tagStr ? tagStr.split(',').map(function(t) { return t.trim(); }) : [];
+        const matchCategory = !activeCategory || cat === activeCategory;
+        const matchTags = activeTags.size === 0 || Array.from(activeTags).some(function(t) { return itemTags.indexOf(t) !== -1; });
+        const show = matchCategory && matchTags;
+        item.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    bar.addEventListener('click', function(e) {
+      const chip = e.target.closest('.filter-chip');
+      if (!chip) return;
+      const type = chip.getAttribute('data-filter-type');
+      const value = chip.getAttribute('data-value') || '';
+      if (type === 'category') {
+        activeCategory = value;
+        if (value) activeTags.clear();
+      }
+      if (type === 'tag') {
+        if (activeTags.has(value)) activeTags.delete(value);
+        else activeTags.add(value);
+      }
+      updateChips();
+      filterItems();
+    });
+
+    updateChips();
+    filterItems();
+  })();
+</script>
+<style>
+  .filter-bar-wrapper {
+    margin-bottom: 0;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] {
+    margin-bottom: 1rem;
+  }
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+  }
+  .filter-toggle:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+  }
+  .filter-toggle-icon {
+    font-size: 0.65rem;
+    opacity: 0.8;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] .filter-bar {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  @media (max-width: 991px) {
+    .filter-bar-wrapper[data-collapsible="true"] .filter-bar:not(.is-open) {
+      display: none;
+    }
+  }
+  @media (min-width: 992px) {
+    .filter-bar-wrapper[data-collapsible="true"] .filter-toggle {
+      display: none;
+    }
+    .filter-bar-wrapper[data-collapsible="true"] .filter-bar {
+      display: block;
+    }
+  }
+  .filter-bar {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border, #e2e8f0);
+  }
+  .filter-bar-wrapper[data-collapsible="true"] + .card-list,
+  .filter-sidebar + .filter-main .card-list {
+    margin-top: 0;
+  }
+  .filter-group {
+    margin-bottom: 0.75rem;
+  }
+  .filter-group:last-child {
+    margin-bottom: 0;
+  }
+  .filter-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted, #64748b);
+    margin-bottom: 0.5rem;
+  }
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] .filter-chips {
+    gap: 0.4rem;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] .filter-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] .filter-group {
+    margin-bottom: 0.6rem;
+  }
+  .filter-chip {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--color-border, #e2e8f0);
+    border-radius: 6px;
+    background: var(--color-bg);
+    color: var(--color-text-muted, #64748b);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .filter-chip:hover {
+    color: var(--color-accent, #2563eb);
+    border-color: var(--color-accent, #2563eb);
+    background: var(--color-accent-muted, rgba(37, 99, 235, 0.08));
+  }
+  .filter-chip.active {
+    background: var(--color-accent, #2563eb);
+    border-color: var(--color-accent, #2563eb);
+    color: #fff;
+  }
+  .filter-chip--tag {
+    font-size: 0.8125rem;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] .filter-chip {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8125rem;
+  }
+  .filter-bar-wrapper[data-collapsible="true"] .filter-chip--tag {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+  }
+</style>

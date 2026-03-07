@@ -1,0 +1,186 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SEO from '../components/SEO.astro';
+import { getEntry, render } from 'astro:content';
+import { siteConfig } from '../config';
+import { pagesConfig } from '../pages.config';
+
+/** 이메일 + 깃허브, 링크드인만 */
+const contactLinks: Array<{ label: string; href: string }> = [
+  ...(siteConfig.social.github ? [{ label: '깃허브', href: siteConfig.social.github }] : []),
+  ...(siteConfig.social.linkedin ? [{ label: '링크드인', href: siteConfig.social.linkedin }] : []),
+];
+
+const aboutEntry = await getEntry('about', 'index');
+if (!aboutEntry) {
+  throw new Error('About content not found: src/content/about/index.md');
+}
+const { Content } = await render(aboutEntry);
+---
+
+<BaseLayout>
+  <SEO slot="head" title={pagesConfig.about.title} description={pagesConfig.about.description} type="website" />
+
+  <main class="page-container">
+    <section class="contact-top" aria-label="Contact">
+      <span class="contact-top-label">Contact</span>
+      <a href={`mailto:${siteConfig.author.email}`} class="email-link">{siteConfig.author.email}</a>
+    </section>
+
+    <header class="page-header">
+      <h1 class="page-title">{pagesConfig.about.heading}</h1>
+      {pagesConfig.about.intro && <p class="page-intro">{pagesConfig.about.intro}</p>}
+    </header>
+
+    <section class="prose about-prose">
+      <Content />
+    </section>
+
+    <hr />
+
+    <section class="contact-zone">
+      <a href={`mailto:${siteConfig.author.email}`} class="email-link">{siteConfig.author.email}</a>
+      {contactLinks.length > 0 && (
+        <>
+          <span class="separator">·</span>
+          {contactLinks.map((link, i) => (
+            <>
+              <a href={link.href} target="_blank" rel="noopener noreferrer" class="contact-link">{link.label}</a>
+              {i < contactLinks.length - 1 && <span class="separator">·</span>}
+            </>
+          ))}
+        </>
+      )}
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .contact-top {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .contact-top-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+  }
+  .contact-zone {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0;
+  }
+  .email-link,
+  .contact-link {
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+  }
+  .email-link:hover,
+  .contact-link:hover {
+    color: var(--color-text-secondary);
+  }
+  .separator {
+    color: var(--color-text-muted);
+    user-select: none;
+  }
+
+  /* About content: 계층·구역만 강화, 폰트 크기·색상 변수 유지 */
+  .about-prose h2 {
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .about-prose h2 + p {
+    background: var(--color-bg-secondary);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--border-radius-md);
+    border-left: 3px solid var(--color-accent);
+    margin-bottom: var(--space-md);
+  }
+
+  .about-prose h2 + p + p,
+  .about-prose h2 + p + p + p {
+    margin-top: 0;
+  }
+
+  .about-prose h2 + p + p + p {
+    margin-bottom: var(--space-md);
+    color: var(--color-text-muted);
+  }
+
+  .about-prose h3 {
+    border-left: 3px solid var(--color-accent);
+    padding-left: var(--space-md);
+    margin-left: 0;
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-sm);
+  }
+
+  .about-prose h3:first-of-type {
+    margin-top: 0;
+  }
+
+  .about-prose h3 + p {
+    margin-top: 0;
+    margin-bottom: var(--space-sm);
+  }
+
+  /* 마크다운으로 렌더된 ul/li는 스코프 밖이므로 :global() 사용 */
+  .about-prose :global(ul) {
+    list-style: none;
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: var(--space-lg);
+  }
+
+  .about-prose :global(ul li) {
+    list-style: none;
+    list-style-type: none;
+    padding-left: var(--space-md);
+    margin-bottom: var(--space-sm);
+    border-left: 2px solid var(--color-border);
+    margin-left: var(--space-sm);
+  }
+
+  .about-prose hr {
+    margin: var(--space-3xl) 0;
+  }
+
+  /* Skill 카테고리 라벨(문단 전체가 strong인 경우) */
+  .about-prose p:has(strong:only-child) {
+    display: inline-block;
+    background: var(--color-bg-secondary);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--border-radius-sm);
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .about-prose p:has(strong:only-child):first-of-type {
+    margin-top: 0;
+  }
+
+  .about-prose :global(p code) {
+    display: inline-block;
+    font-family: ui-monospace, 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas, 'Courier New', monospace;
+    font-size: 0.875em;
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-border);
+    margin: 0 var(--space-xs) var(--space-xs) 0;
+  }
+</style>
