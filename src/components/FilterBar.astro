@@ -27,8 +27,6 @@ interface Props {
   tagCategoryMap?: Record<string, string[]>;
 }
 const { filterId, categories, tags, categoryLabel = 'Category', tagLabel = 'Tags', collapsible = false, tagCategoryMap = {} } = Astro.props;
-const gridId = `${filterId}-filter-grid`;
-const emptyId = `${filterId}-filter-empty`;
 const tagCategoryMapJson = JSON.stringify(tagCategoryMap);
 ---
 <div class="filter-bar-wrapper" data-collapsible={collapsible} data-tag-category-map={tagCategoryMapJson}>
