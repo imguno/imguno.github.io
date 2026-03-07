@@ -60,8 +60,10 @@ const tagCategoryMapJson = JSON.stringify(tagCategoryMap);
     )}
   </div>
 </div>
-<script is:inline define:vars={{ filterId, gridId, emptyId }}>
+<script is:inline define:vars={{ filterId }}>
   (function() {
+    const gridId = filterId + '-filter-grid';
+    const emptyId = filterId + '-filter-empty';
     const bar = document.getElementById(filterId + '-filter-bar');
     if (!bar) return;
     const wrapper = bar.closest('.filter-bar-wrapper');

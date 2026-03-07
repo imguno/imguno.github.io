@@ -16,10 +16,10 @@ const featuredProjects = allProjects
 
 const caseSnapshots = featuredProjects.slice(0, 3);
 
-const allDecisions = await getCollection('decisions');
-const recentDecisions = allDecisions
-  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
-  .slice(0, 2);
+// const allDecisions = await getCollection('decisions');
+// const recentDecisions = allDecisions
+//   .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
+//   .slice(0, 2);
 
 /** 빌드 시점에 scripts/generate-recent-blog-posts.mjs 가 생성한 JSON만 사용 (getCollection 호출 없음) */
 const recentBlogPosts = recentBlogPostsJson.map((post) => ({
@@ -56,6 +56,9 @@ const recentBlogPosts = recentBlogPostsJson.map((post) => ({
           <div class="hero-cta">
             <!-- <a href="/projects" class="btn-primary">Explore Case Studies</a> -->
             <a href="/about" class="btn-secondary">About me</a>
+            {siteConfig.social.github && (
+              <a href={siteConfig.social.github} class="btn-secondary" target="_blank" rel="noopener noreferrer">GitHub</a>
+            )}
           </div>
         </div>
 
