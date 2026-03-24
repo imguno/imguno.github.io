@@ -1,0 +1,86 @@
+---
+title: "SQS Lambda 기반 데이터 수집 비동기 처리 시스템"
+role: "Backend Engineer"
+year: 2025
+outcomeSummary: "t2.nano 인스턴스 25대 기반 수집 서버를 제거하고, SQS-Lambda 기반 이벤트 실행 구조로 전환해 고정 리소스 의존성을 없앴다."
+overview: "데이터 수집 작업을 인스턴스 기반 실행 구조에서 SQS-Lambda 기반 이벤트 실행 구조로 전환한 프로젝트다. 기존에는 t2.nano 인스턴스 25대를 상시 운영하며 작업을 처리했고, 실행 위치가 서버에 묶여 있어 확장성과 비용 효율이 제한됐다. 이를 메시지 단위 실행 구조로 바꾸고 Redis로 중복 요청과 상태를 제어했다."
+problem: "작업량과 무관하게 수집 서버 25대를 상시 운영해야 했고, 작업 실행이 인스턴스 단위로 묶여 있어 유연한 확장이 어려웠다. 실행 경로도 서버 중심으로 흩어져 있어 추적과 운영 제어가 복잡했다."
+constraints:
+  - "기존 수집 흐름을 크게 흔들지 않고 전환해야 했다."
+  - "자동 확장과 운영 단순화를 함께 달성해야 했다."
+  - "중복 요청과 작업 상태를 별도로 제어할 필요가 있었다."
+approach: "데이터 수집 요청은 Redis에서 중복 여부와 상태를 확인한 뒤 SQS에 적재하고, Lambda가 메시지 단위로 작업을 실행하도록 구성했다. 서버가 직접 작업을 처리하던 구조를 메시지 기반 실행 구조로 바꾸면서 실행 책임과 확장 기준을 분리했다."
+keyDecisions:
+  - decision: "Lambda 기반 실행 구조를 선택했다."
+    reasoning: "서버를 직접 운영하지 않고도 작업량 기준으로 확장할 수 있어 고정 인프라 의존성을 줄이기에 적합했다."
+    alternatives:
+      - "EC2 worker 서버 유지"
+      - "기존 수집 서버 확장"
+  - decision: "Redis를 요청 단계의 중복 제어 및 상태 관리 레이어로 두었다."
+    reasoning: "중복 요청을 enqueue 이전에 차단하고 작업 상태를 분리해 관리하는 편이 운영상 더 단순하고 비용 측면에서도 유리했다."
+    alternatives:
+      - "SQS 적재 후 consumer 단계에서 중복 제거"
+      - "애플리케이션 내부 상태로만 처리"
+  - decision: "데이터 수집 실패에는 재시도와 DLQ를 적용하지 않기로 했다."
+    reasoning: "자동 복구보다 불필요한 반복 실행 방지가 더 중요하다고 판단해 실패 수집 작업 복구는 정책적으로 제한했다."
+    alternatives:
+      - "모든 실패 작업에 재시도와 DLQ 적용"
+      - "실패 복구를 운영 수동 대응으로만 처리"
+techStack:
+  - "AWS SQS"
+  - "AWS Lambda"
+  - "Redis"
+  - "CloudWatch"
+  - "Event-Driven Architecture"
+impact:
+  metrics:
+    - label: "Collector Instances"
+      value: "-25"
+    - label: "Estimated EC2 Savings"
+      value: "~$130/mo"
+    - label: "Execution Unit"
+      value: "Server -> Message"
+  qualitative: "수집 서버 25대를 제거하고 월 약 $130 규모의 EC2 비용을 절감했다. 동시에 작업 실행 구조를 서버 단위에서 메시지 단위로 전환해 자동 확장 가능한 처리 기반을 만들었다."
+learnings:
+  - "실행 단위를 메시지로 바꾸면 확장 기준이 단순해진다."
+  - "중복 제어는 enqueue 이전 단계에서 처리하는 편이 효과적이다."
+  - "재처리 정책은 작업 특성에 맞게 제한하는 편이 현실적이다."
+featured: true
+status: completed
+category: "Backend"
+order: 1
+filterTags:
+  - "Async Processing"
+  - "Event-Driven"
+  - "AWS"
+  - "System Design"
+relatedDecisions:
+  - "use-sqs-lambda-for-external-integration-jobs"
+  - "use-lambda-nat-for-fixed-egress-ip"
+---
+
+## Architecture Notes
+
+### Before
+
+- t2.nano 인스턴스 25대 기반 수집 서버 상시 운영
+- 인스턴스 단위로 데이터 수집 작업 실행
+- 작업 실행 위치가 서버에 종속된 구조
+- 작업량과 무관하게 고정 비용 발생
+
+### After
+
+- SQS -> Lambda 기반 이벤트 실행 구조로 전환
+- Redis 기반 중복 요청 제어 및 작업 상태 관리
+- 작업 단위 메시지 기반 처리 구조
+- 서버 제거 및 실행 책임을 Lambda로 분리
+- 작업량에 따라 자동 확장되는 구조
+- CloudWatch 기반 로그 통합 및 작업 추적 구조 구성
+
+## What I Would Improve Next
+
+메시지 재처리 기준과 운영 관측성을 더 정교하게 다듬고 싶다. 특히 어떤 실패를 재시도 대상으로 둘지 명확히 나누는 작업이 다음 단계다.
+
+## Related Notes
+
+이 프로젝트의 핵심 범위는 데이터 수집 비동기 전환이다. `Lambda + NAT` 결정은 같은 시기 외부 API 연동에서 파생된 네트워크 설계 이슈로, 본 프로젝트의 핵심 구현이라기보다 비슷한 비동기 전환 맥락에서 나온 확장 사례에 가깝다.

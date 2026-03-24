@@ -50,7 +50,7 @@ const { limit = 3, showTitle = true, title = "What People Say" } = Astro.props;
  * 
  * @returns Array of featured testimonial entries, sorted and limited
  */
-const allTestimonials = await getCollection('testimonials');
+const allTestimonials = await getCollection('testimonials', ({ data }) => data.hidden !== true);
 const featuredTestimonials = allTestimonials
   .filter(testimonial => testimonial.data.featured === true)
   .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())

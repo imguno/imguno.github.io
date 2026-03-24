@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/SEO.astro';
+import DecisionCard from '../../components/DecisionCard.astro';
+import PageStats from '../../components/PageStats.astro';
+import { getCollection } from 'astro:content';
+import { pagesConfig } from '../../pages.config';
+
+const allDecisions = await getCollection('decisions', ({ data }) => data.hidden !== true);
+const sortedDecisions = allDecisions.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const totalDecisions = sortedDecisions.length;
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={pagesConfig.decisions.title}
+    description={pagesConfig.decisions.description}
+    type="website"
+  />
+
+  <main class="page-container">
+    <header class="page-header">
+      <h1 class="page-title">{pagesConfig.decisions.heading}</h1>
+      <p class="page-intro">{pagesConfig.decisions.intro}</p>
+      <PageStats text={`${totalDecisions}개 의사결정 기록`} />
+    </header>
+
+    {sortedDecisions.length > 0 ? (
+      <div class="card-list">
+        {sortedDecisions.map((decision) => (
+          <DecisionCard
+            title={decision.data.title}
+            slug={decision.id}
+            context={decision.data.context}
+            date={decision.data.date}
+            tags={decision.data.tags}
+          />
+        ))}
+      </div>
+    ) : (
+      <p class="empty-state">아직 Decision 항목이 없습니다.</p>
+    )}
+  </main>
+</BaseLayout>

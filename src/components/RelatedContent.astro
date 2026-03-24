@@ -37,7 +37,9 @@ const {
 
 // Fetch all collections once
 const allProjects = await getCollection('projects');
-const allDecisions = await getCollection('decisions');
+const allDecisions = relatedDecisions.length > 0
+  ? await getCollection('decisions', ({ data }) => data.hidden !== true)
+  : [];
 
 // Filter to get related items
 const projects = relatedProjects

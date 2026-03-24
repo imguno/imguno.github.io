@@ -1,0 +1,252 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SEO from '../../components/SEO.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import ScrollToTop from '../../components/ScrollToTop.astro';
+import ArticleNav from '../../components/ArticleNav.astro';
+import RelatedContent from '../../components/RelatedContent.astro';
+import { getCollection, getEntry, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const decisions = await getCollection('decisions', ({ data }) => data.hidden !== true);
+  return decisions.map((decision) => ({
+    params: { slug: decision.id },
+  }));
+}
+
+const { slug } = Astro.params;
+const decisionEntry = await getEntry('decisions', slug!);
+
+if (!decisionEntry || decisionEntry.data.hidden === true) {
+  return Astro.redirect('/404');
+}
+
+const { Content } = await render(decisionEntry);
+
+const {
+  title,
+  date,
+  context,
+  decision,
+  alternatives,
+  reasoning,
+  tags,
+  relatedProjects,
+  relatedDecisions,
+} = decisionEntry.data;
+
+const allDecisions = (await getCollection('decisions', ({ data }) => data.hidden !== true))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const currentIndex = allDecisions.findIndex((entry) => entry.id === decisionEntry.id);
+const prevDecision = currentIndex > 0
+  ? { slug: allDecisions[currentIndex - 1].id, title: allDecisions[currentIndex - 1].data.title }
+  : null;
+const nextDecision = currentIndex >= 0 && currentIndex < allDecisions.length - 1
+  ? { slug: allDecisions[currentIndex + 1].id, title: allDecisions[currentIndex + 1].data.title }
+  : null;
+
+function formatDate(value: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(value);
+}
+---
+
+<BaseLayout>
+  <SEO
+    slot="head"
+    title={`${title} - Decision`}
+    description={context}
+    type="article"
+    publishDate={date}
+  />
+
+  <StructuredData
+    type="Article"
+    data={{
+      title,
+      description: context,
+      publishDate: date,
+      tags,
+      url: Astro.url.href,
+    }}
+  />
+
+  <main class="article">
+    <p class="article-category">Decision</p>
+
+    <header class="article-header">
+      <h1>{title}</h1>
+      <div class="article-meta">
+        <time class="publish-date" datetime={date.toISOString()}>
+          {formatDate(date)}
+        </time>
+      </div>
+      {tags && tags.length > 0 && (
+        <div class="article-tags">
+          {tags.map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+      )}
+    </header>
+
+    <article class="article-content">
+      <section>
+        <h2>Context</h2>
+        <p>{context}</p>
+      </section>
+
+      <section>
+        <h2>Decision</h2>
+        <p>{decision}</p>
+      </section>
+
+      <section>
+        <h2>Alternatives</h2>
+        <div class="alternatives-list">
+          {alternatives.map((item) => (
+            <div class="alternative-item">
+              <h3>{item.option}</h3>
+              {item.pros && item.pros.length > 0 && (
+                <>
+                  <p class="list-label">Pros</p>
+                  <ul>
+                    {item.pros.map((pro) => (
+                      <li>{pro}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {item.cons && item.cons.length > 0 && (
+                <>
+                  <p class="list-label">Cons</p>
+                  <ul>
+                    {item.cons.map((con) => (
+                      <li>{con}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2>Reasoning</h2>
+        <p>{reasoning}</p>
+      </section>
+
+      {decisionEntry.body && decisionEntry.body.trim().length > 0 && <Content />}
+    </article>
+
+    <RelatedContent relatedProjects={relatedProjects} relatedDecisions={relatedDecisions} />
+    <ArticleNav prev={prevDecision} next={nextDecision} backHref="/decisions" backText="전체 Decisions" />
+  </main>
+
+  <ScrollToTop />
+
+  <style>
+    .article {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .article-category {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-muted);
+      margin: 0 0 0.5rem;
+    }
+
+    .article-header {
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .article-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9375rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 1rem;
+    }
+
+    .article-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .tag {
+      font-size: 0.8125rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      color: var(--color-text-secondary);
+    }
+
+    .article-content {
+      font-size: 1.125rem;
+      line-height: 1.7;
+      color: var(--color-text);
+    }
+
+    .article-content section + section {
+      margin-top: 2.5rem;
+    }
+
+    .article-content h2 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .article-content h3 {
+      font-size: 1.125rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .alternatives-list {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .alternative-item {
+      padding: 1.25rem;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-bg-secondary);
+    }
+
+    .list-label {
+      margin: 1rem 0 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  </style>
+</BaseLayout>

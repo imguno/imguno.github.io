@@ -1,0 +1,39 @@
+---
+title: "외부 API 화이트리스트 제약은 Lambda + NAT로 해결한다"
+date: 2025-03-26
+context: "외부 API 호출을 요청 경로에서 분리하려 했지만, 대상 서비스는 IP 화이트리스트 기반 접근 제어를 요구하고 있었다. 비동기 실행 구조를 유지하면서도 고정 IP 조건을 만족시킬 방법이 필요했다."
+decision: "외부 API 호출은 Lambda에서 수행하되, NAT를 통해 고정 egress IP를 제공하는 구조를 선택한다."
+alternatives:
+  - option: "API 서버에서 직접 호출을 유지한다"
+    pros:
+      - "네트워크 구성이 단순하다"
+      - "기존 코드 변경 범위가 작다"
+    cons:
+      - "요청 처리 시간과 외부 API latency가 계속 결합된다"
+      - "장애 영향 범위가 요청 처리까지 확장된다"
+  - option: "EC2 기반 worker 서버를 별도로 운영한다"
+    pros:
+      - "고정 IP 구성은 비교적 직관적이다"
+      - "디버깅과 런타임 제어가 익숙하다"
+    cons:
+      - "서버 운영 부담과 고정 비용이 다시 생긴다"
+      - "비동기 전환의 이점을 일부 상쇄한다"
+reasoning: "Lambda로 실행 경로를 분리하면서도 NAT를 통해 고정 egress IP를 제공할 수 있어, 비동기 구조와 네트워크 제약을 동시에 만족시킬 수 있었다."
+tags:
+  - "AWS"
+  - "Lambda"
+  - "NAT"
+  - "Networking"
+  - "External API"
+  - "Architecture"
+relatedProjects:
+  - "data-collection-async-processing"
+relatedDecisions:
+  - "use-sqs-lambda-for-external-integration-jobs"
+---
+
+핵심은 실행 구조를 되돌리지 않고 네트워크 계층에서 제약을 해결하는 것이었다.
+
+- 요청 경로와 외부 호출 경로는 분리한다.
+- 실행 주체는 서버가 아니라 이벤트 실행 환경으로 둔다.
+- 네트워크 제약은 아키텍처 전체를 되돌리지 말고 연결 계층에서 해결한다.

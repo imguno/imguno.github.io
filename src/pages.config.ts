@@ -59,6 +59,12 @@ export const pagesConfig = {
     heading: 'Projects',
     intro: '',
   },
+  decisions: {
+    title: 'Decisions',
+    description: '아키텍처와 구현 과정에서 내린 주요 기술 의사결정 기록.',
+    heading: 'Decisions',
+    intro: '',
+  },
   journey: {
     title: 'Journey',
     description: '경력 성장과 학습 타임라인. 마일스톤, 전환점, 성장 스토리.',

@@ -162,6 +162,9 @@ const decisionsCollection = defineCollection({
     
     /** Related decision slugs for cross-referencing */
     relatedDecisions: z.array(z.string()).optional(),
+
+    /** Whether to hide from UI queries */
+    hidden: z.boolean().default(false),
   }),
 });
 
@@ -193,6 +196,9 @@ const journeyCollection = defineCollection({
     
     /** Skills or technologies associated with this entry */
     skills: z.array(z.string()).optional(),
+
+    /** Whether to hide from UI queries */
+    hidden: z.boolean().default(false),
   }),
 });
 
@@ -257,6 +263,9 @@ const usesCollection = defineCollection({
     
     /** Sort order within category */
     order: z.number(),
+
+    /** Whether to hide from UI queries */
+    hidden: z.boolean().default(false),
   }),
 });
 
@@ -310,6 +319,9 @@ const speakingCollection = defineCollection({
     
     /** Whether to feature this talk */
     featured: z.boolean().default(false),
+
+    /** Whether to hide from UI queries */
+    hidden: z.boolean().default(false),
   }),
 });
 
@@ -364,6 +376,9 @@ const testimonialsCollection = defineCollection({
     
     /** Date of the testimonial */
     date: z.coerce.date(),
+
+    /** Whether to hide from UI queries */
+    hidden: z.boolean().default(false),
   }),
 });
 
