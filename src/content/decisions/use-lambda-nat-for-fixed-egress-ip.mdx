@@ -1,5 +1,5 @@
 ---
-title: "외부 API 화이트리스트 제약은 Lambda + NAT로 해결한다"
+title: "외부 API 화이트리스트 제약을 Lambda + NAT로 해결한 이유"
 date: 2025-03-26
 context: "외부 API 호출을 요청 경로에서 분리하려 했지만, 대상 서비스는 IP 화이트리스트 기반 접근 제어를 요구하고 있었다. 비동기 실행 구조를 유지하면서도 고정 IP 조건을 만족시킬 방법이 필요했다."
 decision: "외부 API 호출은 Lambda에서 수행하되, NAT를 통해 고정 egress IP를 제공하는 구조를 선택한다."

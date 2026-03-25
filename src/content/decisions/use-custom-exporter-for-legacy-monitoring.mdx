@@ -1,0 +1,36 @@
+---
+title: "레거시 모니터링에서 Custom Exporter로 시작한 이유"
+date: 2024-06-01
+context: "레거시 운영 서버에는 이미 중요한 서비스가 올라가 있었고, CPU, 메모리, 디스크, MySQL 연결 수 같은 기본 지표와 서비스 이벤트를 빠르게 수집할 필요가 있었다. 동시에 운영 서버에는 HTTP endpoint 기반 scraping 구조와 IP whitelist를 적용해 안전하게 메트릭을 노출해야 했다."
+decision: "운영 서버에는 필요한 지표만 Prometheus 포맷으로 노출하는 Custom Exporter를 두고, HTTP endpoint 기반 scraping 구조로 수집한다."
+alternatives:
+  - option: "범용 exporter나 에이전트를 바로 설치한다"
+    pros:
+      - "표준 지표를 빠르게 많이 수집할 수 있다"
+      - "생태계와 문서가 풍부하다"
+    cons:
+      - "운영 서버에 새 프로세스와 의존성이 추가된다"
+      - "현재 서버 특성을 모르는 상태에서 부작용 가능성이 있다"
+  - option: "로그 기반 분석만으로 대응한다"
+    pros:
+      - "추가 설치 부담이 적다"
+    cons:
+      - "시계열 리소스 지표를 지속적으로 보기 어렵다"
+      - "병목 패턴을 정량적으로 설명하기 어렵다"
+reasoning: "초기 목표는 운영 서버에 부담을 크게 늘리지 않으면서 필요한 지표를 빠르게 확보하는 것이었다. Custom Exporter는 Linux 메트릭뿐 아니라 DB 집계 기반 서비스 이벤트도 필요한 형태로 직접 노출할 수 있었고, scraping 경로와 whitelist를 함께 제어하기에도 적합했다."
+tags:
+  - "Legacy"
+  - "Monitoring"
+  - "Prometheus"
+  - "Custom Exporter"
+relatedProjects:
+  - "legacy-monitoring-foundation"
+relatedDecisions:
+  - "prioritize-observability-before-legacy-refactoring"
+---
+
+핵심은 표준 도구를 최대한 많이 붙이는 것이 아니라, 운영 서버에 가장 적은 부담으로 관측을 시작하는 것이었다.
+
+- 운영 서버에는 필요한 지표만 노출한다.
+- HTTP endpoint와 whitelist 기준으로 수집 경로를 통제한다.
+- 관측 범위는 작게 시작하되, 시계열 기반 분석은 가능하게 만든다.
